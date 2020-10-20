@@ -73,13 +73,18 @@ public class SQLitetContentProvider extends ContentProvider {
 
         File fileDir = new File(getContext().getApplicationInfo().dataDir + "/databases/");
         File[] files = fileDir.listFiles();
+        String match = ".*journal.*|.*-wal.*|.*-shm.*";
+        Pattern pattern = Pattern.compile(match);
 
         if (files != null) {
 
-            for (File f : files) {
+            for (File file : files) {
 
-                if (f.isFile() && !f.getName().toLowerCase().endsWith("journal")) {
-                    dbHelperMap.put(f.getName(), new DBHelper(getContext(), f.getName()));
+                if (file.isFile()) {
+                    Matcher fileMatcher = pattern.matcher(file.getName().toLowerCase());
+                    
+                    if (!fileMatcher.find())
+                        dbHelperMap.put(f.getName(), new DBHelper(getContext(), f.getName()));
                 }
             }
         }
