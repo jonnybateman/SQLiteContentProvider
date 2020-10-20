@@ -101,7 +101,7 @@ public class SQLitetContentProvider extends ContentProvider {
                     Matcher fileMatcher = pattern.matcher(file.getName().toLowerCase());
                     
                     if (!fileMatcher.find())
-                        dbHelperMap.put(f.getName(), new DBHelper(getContext(), f.getName()));
+                        dbHelperMap.put(file.getName(), new DBHelper(getContext(), file.getName()));
                 }
             }
         }
