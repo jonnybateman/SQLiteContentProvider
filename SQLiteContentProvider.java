@@ -1,3 +1,20 @@
+/*------------------------------------------------------------------------------------------
+ |              Class: SQLiteContentProvider.java
+ |             Author: Jon Bateman
+ |            Version: 1.0.1
+ |
+ |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
+ |                     database name is passed as a URI parameter so that the relevant DBHelper
+ |                     instance can be used to interact with that database. Using this method
+ |                     the same content provider can be utilized for multiple databases within
+ |                     the app's directory tree.
+ |
+ |      Inherits from: ContentProvider.class
+ |
+ |         Interfaces: N/A
+ |
+ | Intent/Bundle Args: N/A
+ +------------------------------------------------------------------------------------------*/
 package com.development.smartlist;
 
 import android.content.ContentProvider;
