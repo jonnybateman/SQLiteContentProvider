@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.0.1
+ |            Version: 1.0.2
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
@@ -37,8 +37,6 @@ import java.util.HashMap;
 
 public class SQLitetContentProvider extends ContentProvider {
 
-    private static final int DATABASE_VERSION = DBAdapter.DB_VERSION;
-
     // This is the symbolic name of your provider. To avoid conflicts with other providers, you
     // should use internet domain ownership as the basis of your provider authority.
     private static final String AUTHORITY = "<enter provider authority here>";
@@ -64,10 +62,9 @@ public class SQLitetContentProvider extends ContentProvider {
     private static final String KEY_URI_PARAMETER_SQL = "sql";
     private static final String KEY_URI_PARAMETER_LIMIT = "limit";
 
-    static final String KEY_PROVIDER_OPERATION_DBNAME = "database";
-
     private static final String KEY_CURSOR_RESULT = "result";
 
+    private DBHelper dbHelper;
     private HashMap<String, DBHelper> dbHelperMap;
 
     // A URIMatcher that will take in a URI and match it to the appropriate integer identifier above.
@@ -87,8 +84,9 @@ public class SQLitetContentProvider extends ContentProvider {
 
         // Create instance of the DBHelper class for each database that exists in the app's directory structure.
         dbHelperMap = new HashMap<>();
-
-        File fileDir = new File(getContext().getApplicationInfo().dataDir + "/databases/");
+     
+        String dbPath = getContext.getApplicationInfo.dataDir + "/databases/";
+        File fileDir = new File(dbPath);
         File[] files = fileDir.listFiles();
         String match = ".*journal.*|.*-wal.*|.*-shm.*";
         Pattern pattern = Pattern.compile(match);
@@ -100,8 +98,14 @@ public class SQLitetContentProvider extends ContentProvider {
                 if (file.isFile()) {
                     Matcher fileMatcher = pattern.matcher(file.getName().toLowerCase());
                     
-                    if (!fileMatcher.find())
-                        dbHelperMap.put(file.getName(), new DBHelper(getContext(), file.getName()));
+                    if (!fileMatcher.find()) {
+                        SQLiteDatabase db = SQLiteDatabase.openDatabase(dbPath + file.getName, null,
+                                                                        SQLiteDatabase.OPEN_READONLY);
+                        dbHelperMap.put(file.getName(), new DBHelper(getContext(), file.getName(), db.getVersion()));
+                 
+                        if (db != null)
+                            db.close();
+                    } 
                 }
             }
         }
@@ -113,8 +117,8 @@ public class SQLitetContentProvider extends ContentProvider {
     private static class DBHelper extends SQLiteOpenHelper {
 
         // Constructor
-        DBHelper(Context context, String dbName) {
-            super(context, dbName, null, DATABASE_VERSION);
+        DBHelper(Context context, String dbName, int dbVersion) {
+            super(context, dbName, null, dbVersion);
         }
 
         @Override
@@ -145,7 +149,7 @@ public class SQLitetContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
         // Select the appropriate DBHelper instance for the targeted database.
-        DBHelper dbHelper = setDBHeleperInstance(uri);
+        dbHelper = getDBHelperInstance(uri);
 
         Cursor cursor = null;
 
@@ -226,7 +230,7 @@ public class SQLitetContentProvider extends ContentProvider {
     public Uri insert(Uri uri, ContentValues contentValues) {
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = setDBHeleperInstance(uri);
+        dbHelper = getDBHelperInstance(uri);
 
         Uri returnUri = null;
         long id = 0L;
@@ -259,7 +263,7 @@ public class SQLitetContentProvider extends ContentProvider {
         int rowsDeleted = 0;
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = setDBHeleperInstance(uri);
+        dbHelper = getDBHelperInstance(uri);
 
         if (dbHelper != null) {
 
@@ -281,7 +285,7 @@ public class SQLitetContentProvider extends ContentProvider {
         int rowsUpdated = 0;
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = setDBHeleperInstance(uri);
+        dbHelper = getDBHelperInstance(uri);
 
         if (dbHelper != null) {
 
@@ -304,8 +308,7 @@ public class SQLitetContentProvider extends ContentProvider {
         ContentProviderResult[] results = new ContentProviderResult[operations.size()];
 
         // Select the DBHelper instance for the targeted database.
-        String dbName = operations.get(0).getUri().getQueryParameter(KEY_PROVIDER_OPERATION_DBNAME);
-        DBHelper dbHelper = dbHelperMap.get(dbName);
+        dbHelper = getDBHelperInstance(operations.get(0).getUri());
 
         if (dbHelper != null) {
 
@@ -331,7 +334,7 @@ public class SQLitetContentProvider extends ContentProvider {
     /*
      * Set the DBHelper instance for the targeted database
      */
-    public DBHelper setDBHeleperInstance(Uri uri) {
+    public DBHelper getDBHelperInstance(Uri uri) {
 
         // Get the database name parameter from the uri.
         String dbName = uri.getQueryParameter(KEY_URI_PARAMETER_DATABASE);
