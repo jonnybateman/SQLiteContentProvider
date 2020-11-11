@@ -34,6 +34,8 @@ import android.util.Log;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SQLitetContentProvider extends ContentProvider {
 
@@ -88,7 +90,8 @@ public class SQLitetContentProvider extends ContentProvider {
         // Create instance of the DBHelper class for each database that exists in the app's directory structure.
         dbHelperMap = new HashMap<>();
 
-        File fileDir = new File(getContext().getApplicationInfo().dataDir + "/databases/");
+        String dbPath = getContext().getApplicationInfo().dataDir + "/databases/";
+        File fileDir = new File(dbPath);
         File[] files = fileDir.listFiles();
         String match = ".*journal.*|.*-wal.*|.*-shm.*";
         Pattern pattern = Pattern.compile(match);
@@ -100,13 +103,15 @@ public class SQLitetContentProvider extends ContentProvider {
                 if (file.isFile()) {
                     Matcher fileMatcher = pattern.matcher(file.getName().toLowerCase());
                     
-                    if (!fileMatcher.find())
+                    if (!fileMatcher.find()) {
                         SQLiteDatabase db = SQLiteDatabase.openDatabase(dbPath + file.getName(),
                                 null, SQLiteDatabase.OPEN_READONLY);
 
                         dbHelperMap.put(file.getName(), new DBHelper(getContext(), file.getName(), db.getVersion()));
+                     
                         if (db != null)
                             db.close();
+                    }
                 }
             }
         }
@@ -150,7 +155,7 @@ public class SQLitetContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
         // Select the appropriate DBHelper instance for the targeted database.
-        DBHelper dbHelper = getDBHeleperInstance(uri);
+        DBHelper dbHelper = getDBHelperInstance(uri);
 
         Cursor cursor = null;
 
@@ -231,7 +236,7 @@ public class SQLitetContentProvider extends ContentProvider {
     public Uri insert(Uri uri, ContentValues contentValues) {
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = getDBHeleperInstance(uri);
+        DBHelper dbHelper = getDBHelperInstance(uri);
 
         Uri returnUri = null;
         long id = 0L;
@@ -264,7 +269,7 @@ public class SQLitetContentProvider extends ContentProvider {
         int rowsDeleted = 0;
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = getDBHeleperInstance(uri);
+        DBHelper dbHelper = getDBHelperInstance(uri);
 
         if (dbHelper != null) {
 
@@ -286,7 +291,7 @@ public class SQLitetContentProvider extends ContentProvider {
         int rowsUpdated = 0;
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = getDBHeleperInstance(uri);
+        DBHelper dbHelper = getDBHelperInstance(uri);
 
         if (dbHelper != null) {
 
@@ -335,7 +340,7 @@ public class SQLitetContentProvider extends ContentProvider {
     /*
      * Get the DBHelper instance for the targeted database
      */
-    public DBHelper getDBHeleperInstance(Uri uri) {
+    public DBHelper getDBHelperInstance(Uri uri) {
 
         // Get the database name parameter from the uri.
         String dbName = uri.getQueryParameter(KEY_URI_PARAMETER_DATABASE);
