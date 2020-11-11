@@ -8,7 +8,7 @@ SQLiteContentProvider.java is a customized Content Provider intended for use by 
 
 Installation into your own app has two simple steps:
 
-1. Download the script SQLiteContentProvider.java and include the class in your own project. Prior to compiling the .java script replace the final string variable 'AUTHORITY' with your own internet domain as the basis of your provider authority. For example, 'private static final String AUTHORITY = "com.abc.xyz";'. This is used to identify which content provider is being targeted.
+1. Download the script SQLiteContentProvider.java and include the class in your own project. Prior to compiling the .java script replace the final string variable 'AUTHORITY' value with your own value (in internet domain ownership format) as the basis of your provider authority. For example, 'private static final String AUTHORITY = "com.abc.xyz";'. This is used to identify which content provider is being targeted.
 
 2. Your app needs to be made aware of the content provider, include the following provider tag in the Manifest file:
       
@@ -16,7 +16,7 @@ Installation into your own app has two simple steps:
               </activity>
               <provider
                   android:authorities="com.abc.xyz"
-                  android:name="SQLiteContentProvider"
+                  android:name=".SQLiteContentProvider"
                   android:grantUriPermissions="true"
                   android:exported="false"
                   android:protectionLevel="signature"
