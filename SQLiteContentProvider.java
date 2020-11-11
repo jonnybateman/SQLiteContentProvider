@@ -9,6 +9,11 @@
  |                     the same content provider can be utilized for multiple databases within
  |                     the same app.
  |
+ |                     App specific alterations:-
+ |                         1. At line 23 use package name specific to your app.
+ |                         2. At line 49 enter name of your provider authority. This should be
+ |                            in internet domain ownership format, e.g. com.abc.xyz
+ |
  |      Inherits from: ContentProvider.class
  |
  |         Interfaces: N/A
