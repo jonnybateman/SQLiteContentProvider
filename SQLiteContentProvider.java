@@ -333,7 +333,7 @@ public class SQLitetContentProvider extends ContentProvider {
     }
 
     /*
-     * Set the DBHelper instance for the targeted database
+     * Get the DBHelper instance for the targeted database
      */
     public DBHelper getDBHeleperInstance(Uri uri) {
 
