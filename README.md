@@ -2,7 +2,7 @@
 
 SQLiteContentProvider.java manages access to an App's central repository of data, in this case a SQLite database. The primary use of a Content Provider is to allow data access from one application to another application. It is essentially a conduit for manipulating a database from a different application to the one that is currently in use.
 
-SQLiteContentProvider.java is a customized Content Provider intended for use by the SQLiteManager App which can be downloaded from the GooglePlay Library. SQLiteManager is a SQLite Database management and development tool. It can be used to view, maintain and build SQLite databases as well as manipulate data.
+SQLiteContentProvider.java is a customized Content Provider intended for use by the SQLite DEV Studio App which can be downloaded from the GooglePlay Library. SQLite Dev Studio is a SQLite Database management and development tool. It can be used to view, maintain and build SQLite databases as well as manipulate data.
 
 ## Installation
 
