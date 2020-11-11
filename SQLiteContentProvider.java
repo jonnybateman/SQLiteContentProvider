@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SQLitetContentProvider extends ContentProvider {
+public class SQLiteContentProvider extends ContentProvider {
 
     // This is the symbolic name of your provider. To avoid conflicts with other providers, you
     // should use internet domain ownership as the basis of your provider authority.
