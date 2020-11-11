@@ -7,7 +7,7 @@
  |                     database name is passed as a URI parameter so that the relevant DBHelper
  |                     instance can be used to interact with that database. Using this method
  |                     the same content provider can be utilized for multiple databases within
- |                     the app's directory tree.
+ |                     the same app.
  |
  |      Inherits from: ContentProvider.class
  |
@@ -15,7 +15,7 @@
  |
  | Intent/Bundle Args: N/A
  +------------------------------------------------------------------------------------------*/
-package com.development.smartlist;
+package <your.package.name>;
 
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
@@ -37,8 +37,6 @@ import java.util.HashMap;
 
 public class SQLitetContentProvider extends ContentProvider {
 
-    private static final int DATABASE_VERSION = DBAdapter.DB_VERSION;
-
     // This is the symbolic name of your provider. To avoid conflicts with other providers, you
     // should use internet domain ownership as the basis of your provider authority.
     private static final String AUTHORITY = "<enter provider authority here>";
@@ -52,22 +50,24 @@ public class SQLitetContentProvider extends ContentProvider {
     private static final String PATH_COMPLEX_QUERY = "complex_query";
     private static final String PATH_APPLY_BATCH = "apply_batch";
 
-    // Use an int for each URI we will run, this represents the different database operations.
+    // Use an int for each URI we will run, this represents the different database actions.
     private static final int DML_STATEMENT = 2;
     private static final int DDL_STATEMENT = 6;
     private static final int SIMPLE_QUERY = 3;
     private static final int COMPLEX_QUERY = 4;
     private static final int APPLY_BATCH = 5;
 
+    // Key constants used to identify parameters within the URI.
     private static final String KEY_URI_PARAMETER_DATABASE = "database";
     private static final String KEY_URI_PARAMETER_TABLE = "table";
     private static final String KEY_URI_PARAMETER_SQL = "sql";
     private static final String KEY_URI_PARAMETER_LIMIT = "limit";
 
-    static final String KEY_PROVIDER_OPERATION_DBNAME = "database";
-
+    // Key constant used to identify/tag the result of a non-query action when assigning it to a Bundle.
     private static final String KEY_CURSOR_RESULT = "result";
 
+    // HashMap used to store DBHelper instances, one for each database. Each instance identified by
+    // it's database name.
     private HashMap<String, DBHelper> dbHelperMap;
 
     // A URIMatcher that will take in a URI and match it to the appropriate integer identifier above.
@@ -101,7 +101,12 @@ public class SQLitetContentProvider extends ContentProvider {
                     Matcher fileMatcher = pattern.matcher(file.getName().toLowerCase());
                     
                     if (!fileMatcher.find())
-                        dbHelperMap.put(file.getName(), new DBHelper(getContext(), file.getName()));
+                        SQLiteDatabase db = SQLiteDatabase.openDatabase(dbPath + file.getName(),
+                                null, SQLiteDatabase.OPEN_READONLY);
+
+                        dbHelperMap.put(file.getName(), new DBHelper(getContext(), file.getName(), db.getVersion()));
+                        if (db != null)
+                            db.close();
                 }
             }
         }
@@ -113,8 +118,8 @@ public class SQLitetContentProvider extends ContentProvider {
     private static class DBHelper extends SQLiteOpenHelper {
 
         // Constructor
-        DBHelper(Context context, String dbName) {
-            super(context, dbName, null, DATABASE_VERSION);
+        DBHelper(Context context, String dbName, int dbVersion) {
+            super(context, dbName, null, dbVersion);
         }
 
         @Override
@@ -136,7 +141,7 @@ public class SQLitetContentProvider extends ContentProvider {
     }
 
     // Parameters:
-    //  uri: The URI (or table) that should be queried.
+    //  uri: The URI to identify the database to be targetted as well as the action to be taken against it.
     //  projection: A string array of columns that will be returned in the result set.
     //  selection: A string defining the criteria for results to be returned.
     //  selectionArgs: Arguments to the above criteria that rows will be checked against.
@@ -145,7 +150,7 @@ public class SQLitetContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
         // Select the appropriate DBHelper instance for the targeted database.
-        DBHelper dbHelper = setDBHeleperInstance(uri);
+        DBHelper dbHelper = getDBHeleperInstance(uri);
 
         Cursor cursor = null;
 
@@ -174,9 +179,6 @@ public class SQLitetContentProvider extends ContentProvider {
                 }
             }
 
-            // Create a bundle to store the result of a non query database action.
-            Bundle returnBundle = new Bundle();
-
             switch (uriMatcher.match(uri)) {
 
                 case SIMPLE_QUERY:
@@ -195,9 +197,17 @@ public class SQLitetContentProvider extends ContentProvider {
                     // Initialise cursor. Doing it this way allows for a Bundle to be returned with the cursor
                     // for a SQL statement that does not retrieve a data set.
                     cursor = db.rawQuery("select 1 from sqlite_master limit 1", null);
+              
+                    // Create a bundle to store the result of a non query database action.
+                    Bundle returnBundle = new Bundle();
 
                     db.execSQL(sql);
                     returnBundle.putInt(KEY_CURSOR_RESULT, 0);
+              
+                    if (cursor != null) {
+                        // Assign bundle to cursor to pass back result.
+                        cursor.setExtras(returnBundle);
+                    }
 
                     break;
 
@@ -210,11 +220,6 @@ public class SQLitetContentProvider extends ContentProvider {
                 default:
                     throw new UnsupportedOperationException("Unknown URI: " + uri);
             }
-
-            if (cursor != null && !returnBundle.isEmpty()) {
-                // Assign bundle to cursor to pass back result.
-                cursor.setExtras(returnBundle);
-            }
         }
 
         return cursor;
@@ -226,7 +231,7 @@ public class SQLitetContentProvider extends ContentProvider {
     public Uri insert(Uri uri, ContentValues contentValues) {
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = setDBHeleperInstance(uri);
+        DBHelper dbHelper = getDBHeleperInstance(uri);
 
         Uri returnUri = null;
         long id = 0L;
@@ -259,7 +264,7 @@ public class SQLitetContentProvider extends ContentProvider {
         int rowsDeleted = 0;
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = setDBHeleperInstance(uri);
+        DBHelper dbHelper = getDBHeleperInstance(uri);
 
         if (dbHelper != null) {
 
@@ -281,7 +286,7 @@ public class SQLitetContentProvider extends ContentProvider {
         int rowsUpdated = 0;
 
         // Select the applicable DBHelper instance for the target database.
-        DBHelper dbHelper = setDBHeleperInstance(uri);
+        DBHelper dbHelper = getDBHeleperInstance(uri);
 
         if (dbHelper != null) {
 
@@ -304,8 +309,7 @@ public class SQLitetContentProvider extends ContentProvider {
         ContentProviderResult[] results = new ContentProviderResult[operations.size()];
 
         // Select the DBHelper instance for the targeted database.
-        String dbName = operations.get(0).getUri().getQueryParameter(KEY_PROVIDER_OPERATION_DBNAME);
-        DBHelper dbHelper = dbHelperMap.get(dbName);
+        DBHelper dbHelper = getDBHelperInstance(operations.get(0).getUri());
 
         if (dbHelper != null) {
 
@@ -331,7 +335,7 @@ public class SQLitetContentProvider extends ContentProvider {
     /*
      * Set the DBHelper instance for the targeted database
      */
-    public DBHelper setDBHeleperInstance(Uri uri) {
+    public DBHelper getDBHeleperInstance(Uri uri) {
 
         // Get the database name parameter from the uri.
         String dbName = uri.getQueryParameter(KEY_URI_PARAMETER_DATABASE);
