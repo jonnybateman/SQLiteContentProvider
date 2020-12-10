@@ -18,7 +18,7 @@ Installation into your own app has two simple steps:
                   android:authorities="com.abc.xyz"
                   android:name=".SQLiteContentProvider"
                   android:grantUriPermissions="true"
-                  android:exported="false"
+                  android:exported="true"
                   android:protectionLevel="signature"
                   android:syncable="true" />
               ...
