@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.1.1
+ |            Version: 1.1.0
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
