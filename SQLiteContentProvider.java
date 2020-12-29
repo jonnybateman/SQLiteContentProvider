@@ -410,7 +410,7 @@ public class SQLiteContentProvider extends ContentProvider {
 
             // Create a key spec from the provided encryption key, used to decrypt the provider access parameter.
             SecretKeySpec sKeySpec = new SecretKeySpec(
-                    GlobalClass.getAppContext().getResources().getString(R.string.provider_encryption_key).getBytes()
+                    getContext().getResources().getString(R.string.provider_encryption_key).getBytes()
                     , "AES");
 
             // Initialise the Cipher for decrypting.
@@ -424,7 +424,7 @@ public class SQLiteContentProvider extends ContentProvider {
 
             // If the decrypted provider access code matches then allow access to provider methods.
             if (new String(decodedDecryptedParameterByte, StandardCharsets.UTF_8)
-                    .equals(GlobalClass.getAppContext().getResources().getString(R.string.provider_access_code))) {
+                    .equals(getContext().getResources().getString(R.string.provider_access_code))) {
                 accessAllowed = true;
             }
 
