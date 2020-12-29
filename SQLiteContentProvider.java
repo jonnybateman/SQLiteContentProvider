@@ -106,7 +106,6 @@ public class SQLiteContentProvider extends ContentProvider {
     }
 
     @Override
-    @SuppressWarnings({"ConstantConditions"})
     public boolean onCreate() {
 
         // Create instance of the DBHelper class for each database that exists in the app's directory structure.
@@ -379,7 +378,6 @@ public class SQLiteContentProvider extends ContentProvider {
             }
         }
 
-        //noinspection ConstantConditions
         return results;
     }
 
