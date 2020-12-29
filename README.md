@@ -24,7 +24,14 @@ Installation into your own app has two simple steps:
               ...
           </application>
           ...
-          
+
+3. Since the provider has it's 'exported' attribute set to 'true' we need to incorporate a level of security to prevent other/malicious apps from accessing your own app's databases. Create a 'secrets.xml' file in the project's '/res/values' folder. The resources shown below should be incorporated. To access your app's database(s) from SQLiteDevStudio first create an encrypted provider access code in SQLiteDevStudio (menu-->Administration-->Provider Access Code). For the authority string that you used in step 1 enter an encryption key and provider access code. These should match the resource entries in the 'secrets.xml' file. The encryption key will be used to encrypt the provider access code. Only the encrypted access code will be stored in SQLiteDevStudio. Each time a request is made to the content provider the access code will be passed. Only a successfully decrypted access code matched against the corresponding resource will allow access to the content provider and your app's database(s).
+
+            <resources>
+                  <string name="provider_encryption_key">your_encryption_key</string> <!--Needs to be 16 characters-->
+                  <string name="provider_access_code">your_provider_access_code</string>
+            </resources>
+
 ## Contributing
 
 Pull Requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
