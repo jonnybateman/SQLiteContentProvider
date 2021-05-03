@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.1.0
+ |            Version: 1.1.1
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
@@ -14,7 +14,7 @@
  |
  |                     App specific alterations:-
  |                         1. At line 26 use package name specific to your app.
- |                         2. At line 65 enter name of your provider authority. This should be
+ |                         2. At line 66 enter name of your provider authority. This should be
  |                            in internet domain ownership format, e.g. com.abc.xyz
  |
  |      Inherits from: ContentProvider.class
@@ -23,7 +23,7 @@
  |
  | Intent/Bundle Args: N/A
  +------------------------------------------------------------------------------------------*/
-package <your.package.name>;
+package <app package name>;
 
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
@@ -48,6 +48,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.BadPaddingException;
@@ -62,10 +63,10 @@ public class SQLiteContentProvider extends ContentProvider {
 
     // This is the symbolic name of your provider. To avoid conflicts with other providers, you
     // should use internet domain ownership as the basis of your provider authority.
-    private static final String AUTHORITY = "<enter provider authority here>";
+    private static final String AUTHORITY = "<provider.authority.name>";
     // The content authority is used to create the base of all URIs which apps will use to contact
     // this content provider.
-    static final Uri BASE_URI = Uri.parse("content://" + AUTHORITY);
+    private static final Uri BASE_URI = Uri.parse("content://" + AUTHORITY);
 
     private static final String PATH_DML_STATEMENT = "dml_statement";
     private static final String PATH_DDL_STATEMENT = "ddl_statement";
@@ -93,6 +94,7 @@ public class SQLiteContentProvider extends ContentProvider {
     // HashMap used to store DBHelper instances, one for each database. Each instance identified by
     // it's database name.
     private HashMap<String, DBHelper> dbHelperMap;
+    private DBHelper dbHelper;
 
     // A URIMatcher that will take in a URI and match it to the appropriate integer identifier above.
     private static final UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -106,37 +108,10 @@ public class SQLiteContentProvider extends ContentProvider {
     }
 
     @Override
-    @SuppressWarnings({"ConstantConditions"})
     public boolean onCreate() {
 
         // Create instance of the DBHelper class for each database that exists in the app's directory structure.
         dbHelperMap = new HashMap<>();
-
-        String dbPath = getContext().getApplicationInfo().dataDir + "/databases/";
-        File fileDir = new File(dbPath);
-        File[] files = fileDir.listFiles();
-        String match = ".*journal.*|.*-wal.*|.*-shm.*";
-        Pattern pattern = Pattern.compile(match);
-
-        if (files != null) {
-
-            for (File file : files) {
-
-                if (file.isFile()) {
-                    Matcher fileMatcher = pattern.matcher(file.getName().toLowerCase());
-                    
-                    if (!fileMatcher.find()) {
-                        SQLiteDatabase db = SQLiteDatabase.openDatabase(dbPath + file.getName(),
-                                null, SQLiteDatabase.OPEN_READONLY);
-
-                        dbHelperMap.put(file.getName(), new DBHelper(getContext(), file.getName(), db.getVersion()));
-                     
-                        if (db != null)
-                            db.close();
-                    }
-                }
-            }
-        }
 
         return true;
     }
@@ -160,6 +135,7 @@ public class SQLiteContentProvider extends ContentProvider {
         }
     }
 
+
     // The getType() method is used to find the MIME type of the results, either a directory of
     // multiple records, or an individual record.
     @Override
@@ -168,7 +144,7 @@ public class SQLiteContentProvider extends ContentProvider {
     }
 
     // Parameters:
-    //  uri: The URI to identify the database to be targetted as well as the action to be taken against it.
+    //  uri: The URI to identify the database to be targeted as well as the action to be taken against it.
     //  projection: A string array of columns that will be returned in the result set.
     //  selection: A string defining the criteria for results to be returned.
     //  selectionArgs: Arguments to the above criteria that rows will be checked against.
@@ -177,13 +153,17 @@ public class SQLiteContentProvider extends ContentProvider {
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
         Cursor cursor = null;
-     
+
         // Determine if the incoming URI request is from SQLiteDevStudio.
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
 
             // Select the appropriate DBHelper instance for the targeted database.
-            DBHelper dbHelper = getDBHelperInstance(uri);
-         
+            if ((dbHelper = getDBHelperInstance(uri)) == null) {
+
+                // No existing database instance for passed database, create new instance if database exists.
+                createDBHelperInstance(uri);
+            }
+
             if (dbHelper != null) {
                 final SQLiteDatabase db = dbHelper.getWritableDatabase();
 
@@ -227,13 +207,13 @@ public class SQLiteContentProvider extends ContentProvider {
                         // Initialise cursor. Doing it this way allows for a Bundle to be returned with the cursor
                         // for a SQL statement that does not retrieve a data set.
                         cursor = db.rawQuery("select 1 from sqlite_master limit 1", null);
-              
+
                         // Create a bundle to store the result of a non query database action.
                         Bundle returnBundle = new Bundle();
 
                         db.execSQL(sql);
                         returnBundle.putInt(KEY_CURSOR_RESULT, 0);
-              
+
                         if (cursor != null) {
                             // Assign bundle to cursor to pass back result.
                             cursor.setExtras(returnBundle);
@@ -252,7 +232,10 @@ public class SQLiteContentProvider extends ContentProvider {
                 }
             }
         }
-     
+        else {
+            Log.d("SQLiteContentProvider","Access Code not valid");
+        }
+
         return cursor;
     }
 
@@ -263,6 +246,7 @@ public class SQLiteContentProvider extends ContentProvider {
 
         // Determine if the incoming URI request is from SQLiteDevStudio.
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
+
             // Select the applicable DBHelper instance for the target database.
             DBHelper dbHelper = getDBHelperInstance(uri);
 
@@ -286,7 +270,7 @@ public class SQLiteContentProvider extends ContentProvider {
 
             // Add id to the returned URI
             return ContentUris.withAppendedId(returnUri, id);
-         
+
         } else {
             return null;
         }
@@ -299,7 +283,7 @@ public class SQLiteContentProvider extends ContentProvider {
     public int delete(Uri uri, String selection, String[] selectionArgs) {
 
         int rowsDeleted = 0;
-     
+
         // Determine if the incoming URI request is from SQLiteDevStudio.
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
 
@@ -325,7 +309,7 @@ public class SQLiteContentProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
 
         int rowsUpdated = 0;
-     
+
         // Determine if the incoming URI request is from SQLiteDevStudio.
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
 
@@ -350,7 +334,7 @@ public class SQLiteContentProvider extends ContentProvider {
 
     @Override
     public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations) {
-     
+
         ContentProviderResult[] results = null;
 
         // Determine if the incoming URI request is from SQLiteDevStudio.
@@ -386,17 +370,58 @@ public class SQLiteContentProvider extends ContentProvider {
     /*
      * Get the DBHelper instance for the targeted database
      */
-    public DBHelper getDBHelperInstance(Uri uri) {
+    private DBHelper getDBHelperInstance(Uri uri) {
 
         // Get the database name parameter from the uri.
         String dbName = uri.getQueryParameter(KEY_URI_PARAMETER_DATABASE);
         // Select the applicable DBHelper instance for the target database.
         return dbHelperMap.get(dbName);
     }
- 
+
     /*
-     * A decrypt method that decrypts a passed uri parameter. If the decrypted value is valid
-     * then permit access to provider.
+     * Check if the database name passed in the uri from SQLiteDevStudio exists, if so create a
+     * DBHelper instance for the named database.
+     */
+    private void createDBHelperInstance(Uri uri) {
+
+        // Get the database name from the uri.
+        String dbName = uri.getQueryParameter(KEY_URI_PARAMETER_DATABASE);
+
+        String dbPath = Objects.requireNonNull(getContext()).getApplicationInfo().dataDir + "/databases/";
+        File fileDir = new File(dbPath);
+        File[] files = fileDir.listFiles();
+        String match = ".*journal.*|.*-wal.*|.*-shm.*";
+        Pattern pattern = Pattern.compile(match);
+
+        if (files != null) {
+
+            for (File file : files) {
+
+                if (file.isFile()) {
+                    Matcher fileMatcher = pattern.matcher(file.getName().toLowerCase());
+
+                    if (!fileMatcher.find() ) {
+
+                        if (file.getName().equals(dbName)) {
+                            SQLiteDatabase db = SQLiteDatabase.openDatabase(dbPath + file.getName(),
+                                    null, SQLiteDatabase.OPEN_READONLY);
+
+                            Log.d("SQLiteContentProvider", "DBHelper instance created:" + file.getName());
+
+                            dbHelper = new DBHelper(getContext(), file.getName(), db.getVersion());
+                            dbHelperMap.put(file.getName(), dbHelper);
+
+                            db.close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * A decrypt method that decrypts a passed uri parameter. If the decrypted value matches value
+     * stored in resource file then permit access to provider.
      */
     private boolean decryptUriAccessParameter(String encodedEncryptedParameterString) {
 
@@ -422,7 +447,7 @@ public class SQLiteContentProvider extends ContentProvider {
             byte[] decodedDecryptedParameterByte = cipher.doFinal(
                     decodedEncryptedParameterByte, 12, decodedEncryptedParameterByte.length - 12);
 
-            // If the decrypted provider access code matches then allow access to provider methods.
+            // If the decrypted provider access code matches that stored then allow access to provider methods.
             if (new String(decodedDecryptedParameterByte, StandardCharsets.UTF_8)
                     .equals(GlobalClass.getAppContext().getResources().getString(R.string.provider_access_code))) {
                 accessAllowed = true;
@@ -432,7 +457,7 @@ public class SQLiteContentProvider extends ContentProvider {
             try {
                 sKeySpec.destroy();
             } catch (DestroyFailedException dfe) {
-                Log.d("DecryptUriAccessParam..", dfe.toString());
+                // Ignore
             }
 
             Arrays.fill(decodedDecryptedParameterByte, 0, decodedDecryptedParameterByte.length - 1, (byte) 0);
@@ -452,5 +477,5 @@ public class SQLiteContentProvider extends ContentProvider {
         }
 
         return accessAllowed;
-    } 
+    }
 }
