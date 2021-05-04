@@ -433,8 +433,8 @@ public class SQLiteContentProvider extends ContentProvider {
             byte[] decodedEncryptedParameterByte = Base64.decode(encodedEncryptedParameterString, Base64.URL_SAFE);
 
             // Create a key spec from the provided encryption key, used to decrypt the provider access parameter.
-            SecretKeySpec sKeySpec = new SecretKeySpec(
-                    getContext().getResources().getString(R.string.provider_encryption_key).getBytes()
+            SecretKeySpec sKeySpec = new SecretKeySpec(Objects.requireNonNull(
+                    getContext()).getResources().getString(R.string.provider_encryption_key).getBytes()
                     , "AES");
 
             // Initialise the Cipher for decrypting.
