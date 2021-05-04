@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.1.1
+ |            Version: 1.1.2
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
@@ -434,9 +434,8 @@ public class SQLiteContentProvider extends ContentProvider {
             byte[] decodedEncryptedParameterByte = Base64.decode(encodedEncryptedParameterString, Base64.URL_SAFE);
 
             // Create a key spec from the provided encryption key, used to decrypt the provider access parameter.
-            SecretKeySpec sKeySpec = new SecretKeySpec(
-                    GlobalClass.getAppContext().getResources().getString(R.string.provider_encryption_key).getBytes()
-                    , "AES");
+            SecretKeySpec sKeySpec = new SecretKeySpec(Objects.requireNonNull(
+                    getContext()).getResources().getString(R.string.provider_encryption_key).getBytes(), "AES");
 
             // Initialise the Cipher for decrypting.
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
@@ -448,8 +447,8 @@ public class SQLiteContentProvider extends ContentProvider {
                     decodedEncryptedParameterByte, 12, decodedEncryptedParameterByte.length - 12);
 
             // If the decrypted provider access code matches that stored then allow access to provider methods.
-            if (new String(decodedDecryptedParameterByte, StandardCharsets.UTF_8)
-                    .equals(GlobalClass.getAppContext().getResources().getString(R.string.provider_access_code))) {
+            if (new String(decodedDecryptedParameterByte, StandardCharsets.UTF_8).
+                    equals(getContext.getResources().getString(R.string.provider_access_code))) {
                 accessAllowed = true;
             }
 
