@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.1.1
+ |            Version: 1.2.1
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
@@ -73,6 +73,7 @@ public class SQLiteContentProvider extends ContentProvider {
     private static final String PATH_SIMPLE_QUERY = "simple_query";
     private static final String PATH_COMPLEX_QUERY = "complex_query";
     private static final String PATH_APPLY_BATCH = "apply_batch";
+    private static final String PATH_FK_CONSTRAINT = "fk_constraint";
 
     // Use an int for each URI we will run, this represents the different database actions.
     private static final int DML_STATEMENT = 2;
@@ -80,6 +81,7 @@ public class SQLiteContentProvider extends ContentProvider {
     private static final int SIMPLE_QUERY = 3;
     private static final int COMPLEX_QUERY = 4;
     private static final int APPLY_BATCH = 5;
+    private static final int FK_CONSTRAINT = 7;
 
     // Key constants used to identify parameters within the URI.
     private static final String KEY_URI_PARAMETER_DATABASE = "database";
@@ -87,6 +89,7 @@ public class SQLiteContentProvider extends ContentProvider {
     private static final String KEY_URI_PARAMETER_SQL = "sql";
     private static final String KEY_URI_PARAMETER_LIMIT = "limit";
     private static final String KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE = "access_code";
+    private static final String KEY_URI_PARAMETER_FK = "foreign_key";
 
     // Key constant used to identify/tag the result of a non-query action when assigning it to a Bundle.
     private static final String KEY_CURSOR_RESULT = "result";
@@ -105,6 +108,7 @@ public class SQLiteContentProvider extends ContentProvider {
         uriMatcher.addURI(AUTHORITY, PATH_SIMPLE_QUERY, SIMPLE_QUERY);
         uriMatcher.addURI(AUTHORITY, PATH_COMPLEX_QUERY, COMPLEX_QUERY);
         uriMatcher.addURI(AUTHORITY, PATH_APPLY_BATCH, APPLY_BATCH);
+        uriMatcher.addURI(AUTHORITY, PATH_FK_CONSTRAINT, FK_CONSTRAINT);
     }
 
     @Override
@@ -133,8 +137,16 @@ public class SQLiteContentProvider extends ContentProvider {
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             // Database not to be upgraded through content provider.
         }
+     
+        // Enable foreign key constraints in database
+        @Override
+        public void onConfigure(SQLiteDatabase db) {
+            super.onConfigure(db);
+            if (!db.isReadOnly()) {
+                db.setForeignKeyConstraintsEnabled(true);
+            }
+        }
     }
-
 
     // The getType() method is used to find the MIME type of the results, either a directory of
     // multiple records, or an individual record.
@@ -188,7 +200,7 @@ public class SQLiteContentProvider extends ContentProvider {
                         sortOrder = sortOrder + " LIMIT " + rowsLimit;
                     }
                 }
-
+             
                 switch (uriMatcher.match(uri)) {
 
                     case SIMPLE_QUERY:
@@ -200,6 +212,7 @@ public class SQLiteContentProvider extends ContentProvider {
                                 null,
                                 null,
                                 sortOrder);
+                  
                         break;
 
                     case DML_STATEMENT:
@@ -225,14 +238,36 @@ public class SQLiteContentProvider extends ContentProvider {
                         if (sql != null) {
                             cursor = db.rawQuery(sql, selectionArgs);
                         }
+                      
+                        break;
+                      
+                    case FK_CONSTRAINT:
+                        // Initialise cursor. Doing it this way allows for a Bundle to be returned with the cursor
+                        // for a SQL statement that does not retrieve a data set.
+                        cursor = db.rawQuery("select 1 from sqlite_master limit 1", null);
+                  
+                        // Create a bundle to store the result of a non query database action.
+                        returnBundle = new Bundle();
+                  
+                        // Toggle the foreign key constraints.
+                        String toggleFkConstraint = uri.getQueryParameter(KEY_URI_PARAMETER_FK);
+                        if (toggleFkConstraint != null)
+                            db.setForeignKeyConstraintsEnabled(Boolean.parseBoolean(toggleFkConstraint));
+
+                        returnBundle.putInt(KEY_CURSOR_RESULT, 0);
+
+                        if (cursor != null)
+                            // Assign bundle to cursor to pass back result.
+                            cursor.setExtras(returnBundle);
+
                         break;
 
                     default:
                         throw new UnsupportedOperationException("Unknown URI: " + uri);
                 }
             }
-        }
-        else {
+         
+        } else {
             Log.d("SQLiteContentProvider","Access Code not valid");
         }
 
