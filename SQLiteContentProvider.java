@@ -23,7 +23,7 @@
  |
  | Intent/Bundle Args: N/A
  +------------------------------------------------------------------------------------------*/
-package <package name>;
+package <app package name>;
 
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
@@ -62,7 +62,7 @@ public class SQLiteContentProvider extends ContentProvider {
 
     // This is the symbolic name of your provider. To avoid conflicts with other providers, you
     // should use internet domain ownership as the basis of your provider authority.
-    private static final String AUTHORITY = "<provider.authority.name";
+    private static final String AUTHORITY = "<provider.authority.name>";
     // The content authority is used to create the base of all URIs which apps will use to contact
     // this content provider.
     private static final Uri BASE_URI = Uri.parse("content://" + AUTHORITY);
