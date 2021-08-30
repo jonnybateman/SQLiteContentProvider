@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.2.1
+ |            Version: 1.2.2
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
@@ -14,7 +14,7 @@
  |
  |                     App specific alterations:-
  |                         1. At line 26 use package name specific to your app.
- |                         2. At line 66 enter name of your provider authority. This should be
+ |                         2. At line 65 enter name of your provider authority. This should be
  |                            in internet domain ownership format, e.g. com.abc.xyz
  |
  |      Inherits from: ContentProvider.class
@@ -47,7 +47,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,7 +95,6 @@ public class SQLiteContentProvider extends ContentProvider {
 
     // HashMap used to store DBHelper instances, one for each database. Each instance identified by
     // it's database name.
-    private HashMap<String, DBHelper> dbHelperMap;
     private DBHelper dbHelper;
 
     // A URIMatcher that will take in a URI and match it to the appropriate integer identifier above.
@@ -113,9 +111,6 @@ public class SQLiteContentProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-
-        // Create instance of the DBHelper class for each database that exists in the app's directory structure.
-        dbHelperMap = new HashMap<>();
 
         return true;
     }
@@ -137,7 +132,7 @@ public class SQLiteContentProvider extends ContentProvider {
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             // Database not to be upgraded through content provider.
         }
-     
+
         // Enable foreign key constraints in database
         @Override
         public void onConfigure(SQLiteDatabase db) {
@@ -169,10 +164,12 @@ public class SQLiteContentProvider extends ContentProvider {
         // Determine if the incoming URI request is from SQLiteDevStudio.
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
 
-            // Select the appropriate DBHelper instance for the targeted database.
-            if ((dbHelper = getDBHelperInstance(uri)) == null) {
+            // Get the name of the targeted database.
+            String dbName = uri.getQueryParameter(KEY_URI_PARAMETER_DATABASE);
 
-                // No existing database instance for passed database, create new instance if database exists.
+            // Create a new database helper instance if one has not yet been created or if the targeted
+            // database has changed.
+            if (dbHelper == null || !dbHelper.getDatabaseName().equals(dbName)) {
                 createDBHelperInstance(uri);
             }
 
@@ -200,7 +197,7 @@ public class SQLiteContentProvider extends ContentProvider {
                         sortOrder = sortOrder + " LIMIT " + rowsLimit;
                     }
                 }
-             
+
                 switch (uriMatcher.match(uri)) {
 
                     case SIMPLE_QUERY:
@@ -212,7 +209,7 @@ public class SQLiteContentProvider extends ContentProvider {
                                 null,
                                 null,
                                 sortOrder);
-                  
+
                         break;
 
                     case DML_STATEMENT:
@@ -238,17 +235,17 @@ public class SQLiteContentProvider extends ContentProvider {
                         if (sql != null) {
                             cursor = db.rawQuery(sql, selectionArgs);
                         }
-                      
+
                         break;
-                      
+
                     case FK_CONSTRAINT:
                         // Initialise cursor. Doing it this way allows for a Bundle to be returned with the cursor
                         // for a SQL statement that does not retrieve a data set.
                         cursor = db.rawQuery("select 1 from sqlite_master limit 1", null);
-                  
+
                         // Create a bundle to store the result of a non query database action.
                         returnBundle = new Bundle();
-                  
+
                         // Toggle the foreign key constraints.
                         String toggleFkConstraint = uri.getQueryParameter(KEY_URI_PARAMETER_FK);
                         if (toggleFkConstraint != null)
@@ -266,7 +263,7 @@ public class SQLiteContentProvider extends ContentProvider {
                         throw new UnsupportedOperationException("Unknown URI: " + uri);
                 }
             }
-         
+
         } else {
             Log.d("SQLiteContentProvider","Access Code not valid");
         }
@@ -281,9 +278,6 @@ public class SQLiteContentProvider extends ContentProvider {
 
         // Determine if the incoming URI request is from SQLiteDevStudio.
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
-
-            // Select the applicable DBHelper instance for the target database.
-            DBHelper dbHelper = getDBHelperInstance(uri);
 
             Uri returnUri = null;
             long id = 0L;
@@ -322,9 +316,6 @@ public class SQLiteContentProvider extends ContentProvider {
         // Determine if the incoming URI request is from SQLiteDevStudio.
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
 
-            // Select the applicable DBHelper instance for the target database.
-            DBHelper dbHelper = getDBHelperInstance(uri);
-
             if (dbHelper != null) {
 
                 // Open the database readying it for DML/DDL operations.
@@ -347,9 +338,6 @@ public class SQLiteContentProvider extends ContentProvider {
 
         // Determine if the incoming URI request is from SQLiteDevStudio.
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
-
-            // Select the applicable DBHelper instance for the target database.
-            DBHelper dbHelper = getDBHelperInstance(uri);
 
             if (dbHelper != null) {
 
@@ -376,9 +364,6 @@ public class SQLiteContentProvider extends ContentProvider {
         if (decryptUriAccessParameter(operations.get(0).getUri().getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
             results = new ContentProviderResult[operations.size()];
 
-            // Select the DBHelper instance for the targeted database.
-            DBHelper dbHelper = getDBHelperInstance(operations.get(0).getUri());
-
             if (dbHelper != null) {
 
                 // Open database for writing to.
@@ -399,17 +384,6 @@ public class SQLiteContentProvider extends ContentProvider {
         }
 
         return results;
-    }
-
-    /*
-     * Get the DBHelper instance for the targeted database
-     */
-    private DBHelper getDBHelperInstance(Uri uri) {
-
-        // Get the database name parameter from the uri.
-        String dbName = uri.getQueryParameter(KEY_URI_PARAMETER_DATABASE);
-        // Select the applicable DBHelper instance for the target database.
-        return dbHelperMap.get(dbName);
     }
 
     /*
@@ -440,10 +414,7 @@ public class SQLiteContentProvider extends ContentProvider {
                             SQLiteDatabase db = SQLiteDatabase.openDatabase(dbPath + file.getName(),
                                     null, SQLiteDatabase.OPEN_READONLY);
 
-                            Log.d("SQLiteContentProvider", "DBHelper instance created:" + file.getName());
-
                             dbHelper = new DBHelper(getContext(), file.getName(), db.getVersion());
-                            dbHelperMap.put(file.getName(), dbHelper);
 
                             db.close();
                         }
