@@ -41,6 +41,8 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -56,7 +58,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.security.auth.DestroyFailedException;
 
 public class SQLiteContentProvider extends ContentProvider {
 
@@ -461,7 +462,7 @@ public class SQLiteContentProvider extends ContentProvider {
             // SecretKeySpec.destroy() method is an optional method. Not all implementations of SecretKey
             // implement it.
             try {
-                Method method = SecretKeySpec.class.getMethod("destroy"); // (Class<?>[]) null
+                Method method = SecretKeySpec.class.getMethod("destroy");
                 method.invoke(sKeySpec);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 // ignore
