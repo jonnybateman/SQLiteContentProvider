@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.2.2
+ |            Version: 1.2.3
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
@@ -458,11 +458,13 @@ public class SQLiteContentProvider extends ContentProvider {
                 accessAllowed = true;
             }
 
-            // Ensure sensitive information does not persist.
+            // SecretKeySpec.destroy() method is an optional method. Not all implementations of SecretKey
+            // implement it.
             try {
-                sKeySpec.destroy();
-            } catch (DestroyFailedException dfe) {
-                // Ignore
+                Method method = SecretKeySpec.class.getMethod("destroy"); // (Class<?>[]) null
+                method.invoke(sKeySpec);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                // ignore
             }
 
             Arrays.fill(decodedDecryptedParameterByte, 0, decodedDecryptedParameterByte.length - 1, (byte) 0);
