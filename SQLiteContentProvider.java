@@ -170,23 +170,22 @@ public class SQLiteContentProvider extends ContentProvider {
                     if (rowsLimit != null) {
                         sql = sql.concat(" LIMIT " + rowsLimit);
                     }
-                } else {
-                    if (rowsLimit != null) {
-                        sortOrder = sortOrder + " LIMIT " + rowsLimit;
-                    }
                 }
 
                 switch (uriMatcher.match(uri)) {
 
                     case SIMPLE_QUERY:
                         cursor = db.query(
+                                false,
                                 table,
                                 projection,
                                 selection,
                                 selectionArgs,
                                 null,
                                 null,
-                                sortOrder);
+                                sortOrder,
+                                rowsLimit,
+                                cancelSignal);
 
                         break;
 
