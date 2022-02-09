@@ -14,7 +14,7 @@
  |
  |                     App specific alterations:-
  |                         1. At line 26 use package name specific to your app.
- |                         2. At line 67 enter name of your provider authority. This should be
+ |                         2. At line 65 enter name of your provider authority. This should be
  |                            in internet domain ownership format, e.g. com.abc.xyz
  |
  |      Inherits from: ContentProvider.class
