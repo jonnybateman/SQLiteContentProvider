@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.2.4
+ |            Version: 1.2.5
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
@@ -130,6 +130,13 @@ public class SQLiteContentProvider extends ContentProvider {
                 db.setForeignKeyConstraintsEnabled(true);
             }
         }
+     
+        @Override
+        public void onOpen(SQLiteDatabase db) {
+            if (!db.isWriteAheadLoggingEnabled()) {
+                db.enableWriteAheadLogging();
+            }
+        }
     }
 
     @Override
@@ -192,15 +199,7 @@ public class SQLiteContentProvider extends ContentProvider {
                     case DML_STATEMENT:
                     case DDL_STATEMENT:
                         cursor = db.rawQuery("select 1 from sqlite_master limit 1", null);
-
-                        Bundle returnBundle = new Bundle();
-
                         db.execSQL(sql);
-                        returnBundle.putInt(KEY_CURSOR_RESULT, 0);
-
-                        if (cursor != null) {
-                            cursor.setExtras(returnBundle);
-                        }
 
                         break;
 
@@ -214,16 +213,9 @@ public class SQLiteContentProvider extends ContentProvider {
                     case FK_CONSTRAINT:
                         cursor = db.rawQuery("select 1 from sqlite_master limit 1", null);
 
-                        returnBundle = new Bundle();
-
                         String toggleFkConstraint = uri.getQueryParameter(KEY_URI_PARAMETER_FK);
                         if (toggleFkConstraint != null)
                             db.setForeignKeyConstraintsEnabled(Boolean.parseBoolean(toggleFkConstraint));
-
-                        returnBundle.putInt(KEY_CURSOR_RESULT, 0);
-
-                        if (cursor != null)
-                            cursor.setExtras(returnBundle);
 
                         break;
 
@@ -249,11 +241,8 @@ public class SQLiteContentProvider extends ContentProvider {
 
             if (dbHelper != null) {
                 final SQLiteDatabase db = dbHelper.getWritableDatabase();
-
                 String table = uri.getQueryParameter(KEY_URI_PARAMETER_TABLE);
-
                 id = db.insertOrThrow(table, null, contentValues);
-
                 returnUri = BASE_URI.buildUpon().appendPath(table).build();
             }
 
@@ -272,11 +261,8 @@ public class SQLiteContentProvider extends ContentProvider {
         if (decryptUriAccessParameter(uri.getQueryParameter(KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE))) {
 
             if (dbHelper != null) {
-
                 final SQLiteDatabase db = dbHelper.getWritableDatabase();
-
                 String table = uri.getQueryParameter(KEY_URI_PARAMETER_TABLE);
-
                 rowsDeleted = db.delete(table, selection, selectionArgs);
             }
         }
@@ -293,9 +279,7 @@ public class SQLiteContentProvider extends ContentProvider {
 
             if (dbHelper != null) {
                 final SQLiteDatabase db = dbHelper.getWritableDatabase();
-
                 String table = uri.getQueryParameter(KEY_URI_PARAMETER_TABLE);
-
                 rowsUpdated = db.update(table, values, selection, selectionArgs);
             }
         }
