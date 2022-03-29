@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.2.5
+ |            Version: 1.2.6
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed as a URI parameter so that the relevant DBHelper
@@ -14,7 +14,7 @@
  |
  |                     App specific alterations:-
  |                         1. At line 26 use package name specific to your app.
- |                         2. At line 65 enter name of your provider authority. This should be
+ |                         2. At line 64 enter name of your provider authority. This should be
  |                            in internet domain ownership format, e.g. com.abc.xyz
  |
  |      Inherits from: ContentProvider.class
@@ -23,7 +23,7 @@
  |
  | Intent/Bundle Args: N/A
  +------------------------------------------------------------------------------------------*/
-package <package_name>;
+package <your.package.name>;
 
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
@@ -37,7 +37,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.util.Base64;
 import android.util.Log;
@@ -62,7 +61,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class SQLiteContentProvider extends ContentProvider {
 
-    private static final String AUTHORITY = "<provider.authority.name>";
+    private static final String AUTHORITY = "your.provider.authority";
     private static final Uri BASE_URI = Uri.parse("content://" + AUTHORITY);
 
     private static final String PATH_DML_STATEMENT = "dml_statement";
@@ -85,8 +84,6 @@ public class SQLiteContentProvider extends ContentProvider {
     private static final String KEY_URI_PARAMETER_LIMIT = "limit";
     private static final String KEY_URI_PARAMETER_PROVIDER_ACCESS_CODE = "access_code";
     private static final String KEY_URI_PARAMETER_FK = "foreign_key";
-
-    private static final String KEY_CURSOR_RESULT = "result";
 
     private DBHelper dbHelper;
 
@@ -130,7 +127,7 @@ public class SQLiteContentProvider extends ContentProvider {
                 db.setForeignKeyConstraintsEnabled(true);
             }
         }
-     
+
         @Override
         public void onOpen(SQLiteDatabase db) {
             if (!db.isWriteAheadLoggingEnabled()) {
@@ -158,7 +155,10 @@ public class SQLiteContentProvider extends ContentProvider {
 
             String dbName = uri.getQueryParameter(KEY_URI_PARAMETER_DATABASE);
 
-            if (dbHelper == null || !dbHelper.getDatabaseName().equals(dbName)) {
+            if (dbHelper == null) {
+                createDBHelperInstance(uri);
+            } else if (!dbHelper.getDatabaseName().equals(dbName)) {
+                dbHelper.close();
                 createDBHelperInstance(uri);
             }
 
@@ -296,18 +296,11 @@ public class SQLiteContentProvider extends ContentProvider {
             results = new ContentProviderResult[operations.size()];
 
             if (dbHelper != null) {
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-                db.beginTransaction();
                 try {
                     results = super.applyBatch(operations);
 
-                    db.setTransactionSuccessful();
-
                 } catch (OperationApplicationException oae) {
                     Log.d("ContentProvider", "Exception:" + oae.toString());
-                } finally {
-                    db.endTransaction();
                 }
             }
         }
@@ -356,8 +349,7 @@ public class SQLiteContentProvider extends ContentProvider {
             byte[] decodedEncryptedParameterByte = Base64.decode(encodedEncryptedParameterString, Base64.URL_SAFE);
 
             SecretKeySpec sKeySpec = new SecretKeySpec(Objects.requireNonNull(
-                    getContext()).getResources().getString(R.string.provider_encryption_key).getBytes()
-                    , "AES");
+                    getContext()).getResources().getString(R.string.provider_encryption_key).getBytes(),"AES");
 
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, sKeySpec, new GCMParameterSpec(
