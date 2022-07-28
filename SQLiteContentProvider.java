@@ -153,7 +153,6 @@ public class SQLiteContentProvider extends ContentProvider {
 
     private static class DBHelper extends SQLiteOpenHelper {
 
-        // Constructor
         DBHelper(Context context, String dbName, int dbVersion) {
             super(context, dbName, null, dbVersion);
         }
@@ -221,10 +220,8 @@ public class SQLiteContentProvider extends ContentProvider {
             }
 
             ObservableAidlCallbackList.setOnAidlCallbackListChangedListener(list -> {
-                // Invoke AIDL Interface callback method.
                 if (aidlCallback != null) {
                     try {
-                        // Invoke the AIDL Callback interface passing the ArrayList variable.
                         aidlCallback.aidlInterfaceCallback(list);
                     } catch (RemoteException e) {
                         Log.d("SQLiteContentProvider", "Exception:" + e.toString() + "\n" +
@@ -251,10 +248,6 @@ public class SQLiteContentProvider extends ContentProvider {
             }
         }
 
-        /*
-         * Worker thread that runs for the duration of the service. When a database operation is posted
-         * to the queue the thread will execute the operation.
-         */
         private static class DatabaseOperationsThread extends Thread {
             Handler operationsHandler;
             Looper looper;
