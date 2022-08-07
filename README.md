@@ -2,13 +2,13 @@
 
 SQLiteContentProvider.java manages access to an App's central repository of data, in this case a SQLite database. The primary use of a Content Provider is to allow data access from one application to another application. It is essentially a conduit for manipulating a database from a different application to the one that is currently in use.
 
-SQLiteContentProvider.java is a customized Content Provider intended for use by the SQLite DEV Studio App which can be downloaded from the GooglePlay Library. SQLite Dev Studio is a SQLite Database management and development tool. It can be used to view, maintain and build SQLite databases as well as manipulate data.
+SQLiteContentProvider.java is a customized Content Provider intended for use by the SQLiteDevStudio App which can be downloaded from the GooglePlay Library. SQLiteDevStudio is a SQLite Database management and development tool. It can be used to view, maintain and build SQLite databases as well as manipulate data.
 
 ## Installation
 
 Installation into your own app has a few simple steps:
 
-1. When conducting database operations during an open database transaction SQLiteDevStudio uses an AIDL Interface to communicate with a remote service embedded inside this Content Provider. It is this remote service that interacts with the targetted database ensuring that all database operations are processed using the same background thread. Failure to utilise the same thread during an open database transaction will result in a database locked exception. To setup the AIDL interface we need to create two .aidl files within your project.
+1. When executing database operations during an open database transaction SQLiteDevStudio uses an AIDL Interface to communicate with a remote service embedded inside this Content Provider. It is this remote service that interacts with the targetted database ensuring that all database operations are processed using the same background thread. Failure to utilise the same thread during an open database transaction will result in a database locked exception. To setup the AIDL interface we need to create two .aidl files within your project.
 
       - ContentProviderAidlInterface.aidl
       - ContentProviderAidlCallback.aidl
