@@ -8,9 +8,19 @@ SQLiteContentProvider.java is a customized Content Provider intended for use by 
 
 Installation into your own app has a few simple steps:
 
-1. Download the script SQLiteContentProvider.java and include the class in your own project. Prior to compiling the .java script replace the final string variable 'AUTHORITY' value with your own value (in internet domain ownership format) as the basis of your provider authority. For example, 'private static final String AUTHORITY = "com.abc.xyz";'. This is used to identify which content provider is being targeted.
+1. When conducting database operations during an open database transaction SQLiteDevStudio uses an AIDL Interface to communicate with a remote service embedded inside this Content Provider. It is this remote service that interacts with the targetted database ensuring that all datrabase operations are processed using the same background thread. Failure to utilise the same thread will result in an error. To setup the AIDL interface we need to create two .aidl files within your project.
 
-2. Your app needs to be made aware of the content provider, include the following provider tag in the Manifest file:
+      - ContentProviderAidlInterface.aidl
+      - ContentProviderAidlCallback.aidl
+      
+Both files can be found in the SQLiteContentProvider/aidl/ directory.
+The .aidl files should be placed in your projects directory structure as follows:-
+
+![This is an image](
+
+2. Download the script SQLiteContentProvider.java and include the class in your own project. Prior to compiling the .java script replace the final string variable 'AUTHORITY' value with your own value (in internet domain ownership format) as the basis of your provider authority. For example, 'private static final String AUTHORITY = "com.abc.xyz";'. This is used to identify which content provider is being targeted.
+
+3. Your app needs to be made aware of the content provider, include the following provider tag in the Manifest file:
       
           ...
               </activity>
@@ -25,7 +35,7 @@ Installation into your own app has a few simple steps:
           </application>
           ...
 
-3. In Android R and higher we need to implement an intent filter in the manifest due to new Package Visibilty protocols. Include the following intent filter within your launcher activity.
+4. In Android R and higher we need to implement an intent filter in the manifest due to new Package Visibilty protocols. Include the following intent filter within your launcher activity.
 
           ...
           <activity
@@ -38,7 +48,7 @@ Installation into your own app has a few simple steps:
           </activity>
           ...
           
-4. To operate, provider has it's 'exported' attribute set to 'true' so we need to incorporate a level of security to prevent other/malicious apps from accessing your own app's databases via the new content provider. Create a 'secrets.xml' file in the project's '/res/values' folder. The resources shown below should be incorporated into the xml file. To access your app's database(s) from SQLiteDevStudio create an encrypted provider access code in SQLiteDevStudio (menu-->Administration-->Provider Access Code). For the authority string that you used in step 1 enter an encryption key and provider access code. These should match the resource entries in the 'secrets.xml' file. The encryption key will be used to encrypt the provider access code. Only the encrypted access code will be stored in SQLiteDevStudio. Each time a request is made to the content provider the access code will be passed. Only a successfully decrypted access code matched against the corresponding resource will allow access to the content provider and your app's database(s).
+5. To operate, provider has it's 'exported' attribute set to 'true' so we need to incorporate a level of security to prevent other/malicious apps from accessing your own app's databases via the new content provider. Create a 'secrets.xml' file in the project's '/res/values' folder. The resources shown below should be incorporated into the xml file. To access your app's database(s) from SQLiteDevStudio create an encrypted provider access code in SQLiteDevStudio (menu-->Administration-->Provider Access Code). For the authority string that you used in step 1 enter an encryption key and provider access code. These should match the resource entries in the 'secrets.xml' file. The encryption key will be used to encrypt the provider access code. Only the encrypted access code will be stored in SQLiteDevStudio. Each time a request is made to the content provider the access code will be passed. Only a successfully decrypted access code matched against the corresponding resource will allow access to the content provider and your app's database(s).
 
             <resources>
                   <string name="provider_encryption_key">your_encryption_key</string> <!--Needs to be 16 characters-->
