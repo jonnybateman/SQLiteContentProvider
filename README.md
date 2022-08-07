@@ -16,7 +16,7 @@ Installation into your own app has a few simple steps:
       Both files can be found in this repository.
       The .aidl files should be placed in your projects directory structure as follows:-
 
-      ![This is an image](AIDL Structure.jpg)
+      ![This is an image](aidl_project_structure.jpg)
 
 2. Download the script SQLiteContentProvider.java and include the class in your own project. Prior to compiling the .java script replace the final string variable 'AUTHORITY' value with your own value (in internet domain ownership format) as the basis of your provider authority. For example, 'private static final String AUTHORITY = "com.abc.xyz";'. This is used to identify which content provider is being targeted.
 
