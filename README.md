@@ -20,7 +20,8 @@ Installation into your own app has a few simple steps:
       
       Now build the project. The Android SDK Tools will automatically generate an interface in Java based on the .aidl files.
 
-2. Download the script SQLiteContentProvider.java and include the class in your own project. Prior to compiling the .java script replace the final string variable 'AUTHORITY' value with your own value (in internet domain ownership format) as the basis of your provider authority. For example, 'private static final String AUTHORITY = "com.abc.xyz";'. This is used to identify which content provider is being targeted.
+2. Download the script SQLiteContentProvider.java and include the class in your own project. Replace the final string variable 'AUTHORITY' value with your own value (in internet domain ownership format) as the basis of your provider authority. For example, 'private static final String AUTHORITY = "com.abc.xyz";'. This is used to identify which content provider is being targeted.
+Note:- will not compile until step 5 has been completed.
 
 3. Your app needs to be made aware of the content provider and the remote service, include the following provider and service tags in the Manifest file:
       
@@ -66,7 +67,7 @@ Installation into your own app has a few simple steps:
           </activity>
           ...
           
-5. To operate, provider has it's 'exported' attribute set to 'true' so we need to incorporate a level of security to prevent other/malicious apps from accessing your own app's databases via the new content provider. Create a 'secrets.xml' file in the project's '/res/values' folder. The resources shown below should be incorporated into the xml file. To access your app's database(s) from SQLiteDevStudio create an encrypted provider access code in SQLiteDevStudio (menu-->Administration-->Provider Access Code). For the authority string that you used in step 2 enter an encryption key and provider access code. These should match the resource entries in the 'secrets.xml' file. The encryption key will be used to encrypt the provider access code. Only the encrypted access code will be stored in SQLiteDevStudio. Each time a request is made to the content provider the access code will be passed. Only a successfully decrypted access code matched against the corresponding resource will allow access to the content provider and your app's database(s).
+5. To operate, the content provider has it's 'exported' attribute set to 'true' so we need to incorporate a level of security to prevent other/malicious apps from accessing your own app's databases via the new content provider. Create a 'secrets.xml' file in the project's '/res/values' folder. The resources shown below should be incorporated into the xml file. To access your app's database(s) from SQLiteDevStudio create an encrypted provider access code in SQLiteDevStudio (menu-->Administration-->Provider Access Code). For the authority string that you used in step 2 enter an encryption key and provider access code. These should match the resource entries in the 'secrets.xml' file. The encryption key will be used to encrypt the provider access code. Only the encrypted access code will be stored in SQLiteDevStudio. Each time a request is made to the content provider the access code will be passed. Only a successfully decrypted access code matched against the corresponding resource will allow access to the content provider and your app's database(s).
 
             <resources>
                   <string name="provider_encryption_key">your_encryption_key</string> <!--Needs to be 16 characters-->
