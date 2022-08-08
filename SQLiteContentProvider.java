@@ -219,13 +219,16 @@ public class SQLiteContentProvider extends ContentProvider {
                 databaseOperationsThread.start();
             }
 
-            ObservableAidlCallbackList.setOnAidlCallbackListChangedListener(list -> {
-                if (aidlCallback != null) {
-                    try {
-                        aidlCallback.aidlInterfaceCallback(list);
-                    } catch (RemoteException e) {
-                        Log.d("SQLiteContentProvider", "Exception:" + e.toString() + "\n" +
-                                Arrays.toString(Thread.currentThread().getStackTrace()).replace(',', '\n'));
+            ObservableAidlCallbackList.setOnAidlCallbackListChangedListener(new OnAidlReturnValueChangedListener() {
+                @Override
+                public void onAidlReturnValueChanged(List<String> list) {
+                    if (aidlCallback != null) {
+                        try {
+                            aidlCallback.aidlInterfaceCallback(list);
+                        } catch (RemoteException e) {
+                            Log.d("SQLiteContentProvider", "Exception:" + e.toString() + "\n" +
+                                    Arrays.toString(Thread.currentThread().getStackTrace()).replace(',', '\n'));
+                        }
                     }
                 }
             });
