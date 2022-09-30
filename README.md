@@ -35,12 +35,12 @@ Note:- will not compile until step 5 has been completed.
                   android:exported="true"
                   android:protectionLevel="signature"
                   android:syncable="true"
-                  android:process=":sqlitecontentprovider_provider"
+                  android:process=":sqlitecontentprovider_remote_process"
                   tools:ignore="ExportedContentProvider" />
                   
               <service
                   android:name="SQLiteContentProvider$ContentProviderAidlService"
-                  android:process=":sqlitecontentprovider_service"
+                  android:process=":sqlitedevstudio_service"
                   android:enabled="true"
                   android:exported="true"
                   tools:ignore="ExportedService">
