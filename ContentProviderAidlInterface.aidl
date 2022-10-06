@@ -12,7 +12,7 @@ interface ContentProviderAidlInterface {
             String dbName,
             String accessCode,
             in ContentProviderAidlCallback callback,
-            String table,
+            String object,
             in String[] projection,
             String selection,
             in String[] selectionArgs,
