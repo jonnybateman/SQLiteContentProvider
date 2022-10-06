@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------------
  |              Class: SQLiteContentProvider.java
  |             Author: Jon Bateman
- |            Version: 1.2.8
+ |            Version: 1.2.9
  |
  |            Purpose: Content Provider used for interacting with a SQLite database. Targeted
  |                     database name is passed when opening a database connection to create a
@@ -285,7 +285,7 @@ public class SQLiteContentProvider extends ContentProvider {
             private final String dbName;
             private final String accessCode;
             private final ContentProviderAidlCallback callback;
-            private final String table;
+            private final String object;
             private final String[] projection;
             private final String selection;
             private final String[] selectionArgs;
@@ -301,7 +301,7 @@ public class SQLiteContentProvider extends ContentProvider {
                                       String dbName,
                                       String accessCode,
                                       ContentProviderAidlCallback callback,
-                                      String table,
+                                      String object,
                                       String[] projection,
                                       String selection,
                                       String[] selectionArgs,
@@ -316,7 +316,7 @@ public class SQLiteContentProvider extends ContentProvider {
                 this.dbName = dbName;
                 this.accessCode = accessCode;
                 this.callback = callback;
-                this.table = table;
+                this.object = object;
                 this.projection = projection;
                 this.selection = selection;
                 this.selectionArgs = selectionArgs;
@@ -390,7 +390,7 @@ public class SQLiteContentProvider extends ContentProvider {
                                 if (sql == null) {
                                     cursor = db.query(
                                             false,
-                                            table,
+                                            object,
                                             projection,
                                             selection,
                                             selectionArgs,
@@ -480,7 +480,7 @@ public class SQLiteContentProvider extends ContentProvider {
                             cursor = null;
                             try {
                                 if (sql == null) {
-                                    db.insert(table, null, values);
+                                    db.insert(object, null, values);
                                 } else {
                                     db.execSQL(sql);
                                 }
@@ -507,12 +507,12 @@ public class SQLiteContentProvider extends ContentProvider {
                                 if (sql == null) {
                                     if (sqlType.equalsIgnoreCase(SQL_TYPE_UPDATE))
                                         rowCount = db.update(
-                                                table,
+                                                object,
                                                 values,
                                                 selection,
                                                 selectionArgs);
                                     else
-                                        rowCount = db.delete(table, selection, selectionArgs);
+                                        rowCount = db.delete(object, selection, selectionArgs);
                                 } else {
                                     db.execSQL(sql);
                                     cursor = db.rawQuery("select changes()", null);
@@ -548,7 +548,7 @@ public class SQLiteContentProvider extends ContentProvider {
                             int index = 0;
                             try {
                                 for (ContentValues contentValues : rows) {
-                                    db.insert(table, null, contentValues);
+                                    db.insert(object, null, contentValues);
                                     index++;
                                 }
                                 operationResult = String.valueOf(index);
@@ -564,7 +564,7 @@ public class SQLiteContentProvider extends ContentProvider {
                 list.add(0, operationResult);
                 list.add(1, sql);
                 list.add(2, sqlType);
-                list.add(3, table);
+                list.add(3, object);
                 list.add(4, String.valueOf(displayQueryResults));
                 Message msg = databaseOperationsThread.operationsHandler.obtainMessage();
                 Bundle bundle = new Bundle();
@@ -584,7 +584,7 @@ public class SQLiteContentProvider extends ContentProvider {
                     String dbName,
                     String accessCode,
                     ContentProviderAidlCallback callback,
-                    String table,
+                    String object,
                     String[] projection,
                     String selection,
                     String[] selectionArgs,
@@ -600,7 +600,7 @@ public class SQLiteContentProvider extends ContentProvider {
                         dbName,
                         accessCode,
                         callback,
-                        table,
+                        object,
                         projection,
                         selection,
                         selectionArgs,
