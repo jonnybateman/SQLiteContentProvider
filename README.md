@@ -39,7 +39,7 @@ Installation of the content provider into your own app has a few simple steps:
                   android:name=".SQLiteContentProvider"
                   android:grantUriPermissions="true"
                   android:exported="true"
-                  android:protectionLevel="signature"
+                  android:protectionLevel="normal"
                   android:syncable="true"
                   android:process=":sqlitecontentprovider_remote_process"
                   tools:ignore="ExportedContentProvider" />
