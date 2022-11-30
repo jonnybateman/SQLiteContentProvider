@@ -67,7 +67,7 @@ Installation of the content provider into your own app has a few simple steps:
           ...>
               ...
               <intent-filter>
-                  <action android:name="com.cquelsoft.sqlitedevstudio.QUERY"/>
+                  <action android:name="com.cqueltech.sqlitedevstudio.QUERY"/>
                   <category android:name="android.intent.category.DEFAULT"/>
               </intent-filter>
           </activity>
